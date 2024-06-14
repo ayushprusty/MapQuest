@@ -1,0 +1,140 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Journey</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 1000px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker/leaflet.rotatedMarker.min.js"></script>
+    <script>
+        var map = L.map('map').setView([0, 0],1);  // Initial map view
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var vehicleIcon = L.icon({
+            iconUrl: 'vehicle_image_g.png',  // Provide the path to your vehicle icon
+            iconSize: [30, 30]
+        });
+
+        var vehicleMarker = L.marker([0, 0], {icon: vehicleIcon, rotationAngle: 0}).addTo(map);
+
+        var socket = io();
+
+        socket.on('location_update', function(data) {
+            var lat = data.latitude;
+            var lon = data.longitude-0.0006;
+            var heading = data.heading;  // Assuming heading is in degrees
+
+            vehicleMarker.setLatLng([lat, lon]);
+            vehicleMarker.setRotationAngle(heading);
+            map.setView([lat, lon], 15);  // Adjust the map view
+
+            // Optionally, you can log the data to the console
+            console.log('Location update:', data);
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Journey</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 1000px; }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+        .controls button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="controls">
+        <button id="pauseButton">Pause</button>
+        <button id="playButton">Play</button>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker/leaflet.rotatedMarker.min.js"></script>
+    <script>
+        var map = L.map('map').setView([0, 0], 1); // Initial map view
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var vehicleIcon = L.icon({
+            iconUrl: 'vehicle_image_g.png',  // Provide the path to your vehicle icon
+            iconSize: [30, 30]
+        });
+
+        var vehicleMarker = L.marker([0, 0], {icon: vehicleIcon, rotationAngle: 0}).addTo(map);
+
+        var socket = io();
+        var journeyData = []; // Store journey data here
+        var index = 0;
+        var intervalId = null;
+
+
+        // Function to update vehicle position
+        function updateVehiclePosition() {
+            if (index < journeyData.length) {
+                var data = journeyData[index];
+                var lat = data.latitude;
+                var lon = data.longitude - 0.0006; // Adjust longitude as needed
+                var heading = data.heading;  // Assuming heading is in degrees
+
+                vehicleMarker.setLatLng([lat, lon]);
+                vehicleMarker.setRotationAngle(heading);
+                map.setView([lat, lon], 15);  // Adjust the map view
+
+                index++;
+            } else {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }
+
+        // Play button event listener
+        document.getElementById('playButton').addEventListener('click', function() {
+            if (!intervalId) {
+                intervalId = setInterval(updateVehiclePosition, 1000); // Adjust interval as needed
+            }
+        });
+
+        // Pause button event listener
+        document.getElementById('pauseButton').addEventListener('click', function() {
+            clearInterval(intervalId);
+            intervalId = null;
+        });
+
+        // Socket event listener for location updates
+        socket.on('location_update', function(data) {
+            // Update journey data when new location data arrives
+            journeyData.push(data);
+
+            // Optionally, you can log the data to the console
+            console.log('Location update:', data);
+        });
+    </script>
+</body>
+</html>

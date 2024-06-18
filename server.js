@@ -29,6 +29,7 @@ fs.readFile('vehicle_location.json', 'utf8', (err, data) => {
 io.on('connection', (socket) => {
     console.log('a user connected');
     let index = 0;
+    let intervalId = null;
 
     const sendLocationData = () => {
         if (index < locationData.length) {
@@ -42,13 +43,27 @@ io.on('connection', (socket) => {
                 heading: heading
             });
             index++;
-            setTimeout(sendLocationData, 70); // Adjust the interval as needed
+            console.log(index);
+            intervalId = setTimeout(sendLocationData, 70);
         }
     };
 
-    sendLocationData();
+    socket.on('resume', () => {
+        if (!intervalId) {
+            sendLocationData();
+        }
+    });
+
+    socket.on('pause', () => {
+        if (intervalId) {
+            clearTimeout(intervalId);
+            intervalId = null;
+        }
+    });
 });
 
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log('Server is running on http://localhost:${PORT}');
 });
+
+
